@@ -32,12 +32,12 @@ int main(int argc, char** argv) {
     // ==================================
     // ==== Reading the input config file
     // ==================================
-    
+
     ifstream inpconfig("GenOptions.dat");
-    
+
     map<std::string, std::string> m_Settings;
-    if( inpconfig.is_open() ){
-        while( !inpconfig.eof() ){
+    if (inpconfig.is_open()) {
+        while (!inpconfig.eof()) {
             std::string Key;
             std::string Val;
             inpconfig>>Key;
@@ -45,20 +45,20 @@ int main(int argc, char** argv) {
             m_Settings[Key] = Val;
             //cout<<setw(10)<<Key<<setw(20)<<m_Settings[Key]<<endl;
         }
-    }else{
-        cout<<"Can not open the file GenOptions.dat"<<endl;
-        cout<<"So can not initialize settings "<<endl;
-        cout<<"Exiting"<<endl;
+    } else {
+        cout << "Can not open the file GenOptions.dat" << endl;
+        cout << "So can not initialize settings " << endl;
+        cout << "Exiting" << endl;
         exit(1);
     }
 
-    
+
     const double PI = 3.14159265358979312;
     const double radian = 57.2957795130823229;
     const double Mp = 0.9383;
     const double Me = 0.00051;
-    
-    
+
+
     int Nsim;
     double Eb;
     double t_lim;
@@ -72,6 +72,8 @@ int main(int argc, char** argv) {
     double Eg_minUser;
     double Eg_maxUser;
     double q2_cutUser;
+    double Minv_MinUser;
+    double Minv_MaxUser;
 
     // ================== Limits constrained by kimenatics ==========
     // ================== If User limits are out of the kinematic range, then kinematic limits will be used instead
@@ -79,63 +81,65 @@ int main(int argc, char** argv) {
     double Eg_minKine;
     double Eg_maxKine;
     double q2_cutKine;
-    
-    
-    for( map<std::string, std::string>::iterator it =  m_Settings.begin(); it!= m_Settings.end(); it++ ){
-    
+    double Minv_MinKine;
+    double Minv_MaxKine;
+
+
+    for (map<std::string, std::string>::iterator it = m_Settings.begin(); it != m_Settings.end(); it++) {
+
         std::string key = (*it).first;
         std::string val = (*it).second;
 
-        if( key.compare("Nsim") == 0 ){
+        if (key.compare("Nsim") == 0) {
             Nsim = atoi(val.c_str());
-        }else if( key.compare("Eb") == 0 ){
+        } else if (key.compare("Eb") == 0) {
             Eb = atof(val.c_str());
-        }else if( key.compare("tLim") == 0 ){
+        } else if (key.compare("tLim") == 0) {
             t_lim = atof(val.c_str());
-        }else if( key.compare("EgMin") == 0 ){
-            Eg_min = atof(val.c_str());
-        }else if( key.compare("EgMax") == 0 ){
+        } else if (key.compare("EgMin") == 0) {
+            Eg_minUser = atof(val.c_str());
+        } else if (key.compare("EgMax") == 0) {
             Eg_maxUser = atof(val.c_str());
-        }else if( key.compare("q2Cut") == 0 ){
+        } else if (key.compare("MinvMax") == 0) {
+            Minv_MaxUser = atof(val.c_str());
+        } else if (key.compare("MinvMin") == 0) {
+            Minv_MinUser = atof(val.c_str());
+        } else if (key.compare("q2Cut") == 0) {
             q2_cut = atof(val.c_str());
-        }else if( key.compare("LUND") == 0 ){
+        } else if (key.compare("LUND") == 0) {
             isLund = atof(val.c_str());
         }
-        
+
     }
-    
-    cout<<"Nsim = "<<Nsim<<endl;
-    cout<<"Eb = "<<Eb<<endl;
-    cout<<"t_lim = "<<t_lim<<endl;
-    cout<<"Eg_min = "<<Eg_min<<endl;
-    cout<<"Eg_max = "<<Eg_max<<endl;
-    cout<<"q2_cut = "<<q2_cut<<endl;
-    cout<<"IsLund = "<<isLund<<endl;
-    
-    
+
+    cout << "Nsim = " << Nsim << endl;
+    cout << "Eb = " << Eb << endl;
+    cout << "t_lim = " << t_lim << endl;
+    cout << "Eg_min = " << Eg_min << endl;
+    cout << "Eg_max = " << Eg_max << endl;
+    cout << "q2_cut = " << q2_cut << endl;
+    cout << "IsLund = " << isLund << endl;
+
+
     // =====================================================================
     // ==== We know the beam energy, so Eg_maxKine is Eb
     // =====================================================================
-    
+
     Eg_maxKine = Eb;
     Eg_max = TMath::Min(Eg_maxUser, Eg_maxKine);
-    
-    // ======= With a given Eg_minUser, Q2
-    double Q2MinKine = TMath::Power(sqrt(Mp*Mp + 2*Mp*Eg_minUser) - Mp , 2);
-    
-    
-    //const double Eb = 11.;
-    //const double t_lim = -1.2; // limit of t distribution Max(|t|)
 
-    //const int Nsim = 500;
+    // ======= Defining Q2, since in most of formulas Q2 will be used instead of Minv
+    double Q2MinUser = Minv_MinUser*Minv_MinUser;
 
-    //const double Eg_min = 9.; //Gev
-    //const double Eg_max = 11.; //GeV
-    //const double q2_cut = 0.02; // GeV2, this is the cut on virtuality of quasireal photon
-    //  const double Minv_min = sqrt(Mp*Mp + 2*Mp*Eg_min ) - Mp;
-    const double Q2min = 2 * Mp * Eg_min + t_lim - (Eg_min / Mp)*(2 * Mp * Mp - t_lim - sqrt(t_lim * t_lim - 4 * Mp * Mp * t_lim));
-    const double Minv_min = sqrt(Q2min);
-
+    // ======= Now for a givem Q2MinUser, we should check the EgMinUser, if it is below
+    // ======= the threshold to produce Min_MinUser, then it should Eg_min should be adjusted
+    // ======= to be the threshold for Minv production.
+    Eg_minKine = (Q2MinUser + 2*sqrt(Q2MinUser)*Mp)/2*Mp;
+    
+    Eg_min = TMath::Max(Eg_minKine, Eg_minUser);
+    
+    cout<<"Eg_min = "<<Eg_min<<endl;
+    
     TRandom2 rand;
     rand.SetSeed(0);
 
@@ -179,18 +183,19 @@ int main(int argc, char** argv) {
         Eg = rand.Uniform(Eg_min, Eg_min + psf_Eg);
         flux_factor = N_EPA(Eb, Eg, q2_cut);
         double s = Mp * Mp + 2 * Mp*Eg;
-        double t_min = T_min(0., Mp*Mp, Q2min, Mp*Mp, s);
-        double t_max = T_max(0., Mp*Mp, Q2min, Mp*Mp, s);
+        double t_min = T_min(0., Mp*Mp, Q2MinUser, Mp*Mp, s);
+        double t_max = T_max(0., Mp*Mp, Q2MinUser, Mp*Mp, s);
         double psf_t = t_min - TMath::Max(t_max, t_lim);
 
+        //cout<<"t_min = "<<t_min<<"      t_max = "<<t_max<<"    Eg = "<<Eg<<endl;
 
         if (t_min > t_lim) {
             t = rand.Uniform(t_min - psf_t, t_min);
             double Q2max = 2 * Mp * Eg + t - (Eg / Mp)*(2 * Mp * Mp - t - sqrt(t * t - 4 * Mp * Mp * t)); // Page 182 of my notebook. Derived using "Q2max = s + t - 2Mp**2 + u_max" relation
 
-            double psf_Q2 = Q2max - Q2min;
+            double psf_Q2 = Q2max - Q2MinUser;
 
-            Q2 = rand.Uniform(Q2min, Q2min + psf_Q2);
+            Q2 = rand.Uniform(Q2MinUser, Q2MinUser + psf_Q2);
 
             double u = 2 * Mp * Mp + Q2 - s - t;
             double th_qprime = acos((s * (t - u) - Mp * Mp * (Q2 - Mp * Mp)) / sqrt(Lambda(s, 0, Mp * Mp) * Lambda(s, Q2, Mp * Mp))); //Byukling Kayanti (4.9)
@@ -247,7 +252,8 @@ int main(int argc, char** argv) {
 
             double eta = Q2 / (2 * (s - Mp * Mp) - Q2);
 
-            if (Q2 < 9. && -t < 0.8 && eta < 0.8) {
+            // =========== We want to make sure the kinematics is inside the grid of CFFs, otherwise the cross section is not defined
+            if (Q2 < 9. && -t < 0.8 && eta < 0.8 && eta > 0.06) {
                 crs_INT = crs_lmlp.Eval_INT(s, Q2, t, -1., tcs_kin1.GetPhi_cm(), tcs_kin1.GetTheta_cm(), 2.); //the last argumen "1" is the sc_D
                 //crs_INT = crs_lmlp.Eval_INT( tcs_kin1.GetPhi_cm(), tcs_kin1.GetTheta_cm(), 1.); //the last argumen "1" is the sc_D
             } else {
