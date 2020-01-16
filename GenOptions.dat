@@ -3,5 +3,5 @@ Eb	10.6
 tLim	-1.2
 EgMin	4
 EgMax	10.6
-Q2Cut	0.02
+q2Cut	0.02
 LUND	1

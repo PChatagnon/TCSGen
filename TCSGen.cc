@@ -51,6 +51,13 @@ int main(int argc, char** argv) {
         cout<<"Exiting"<<endl;
         exit(1);
     }
+
+    
+    const double PI = 3.14159265358979312;
+    const double radian = 57.2957795130823229;
+    const double Mp = 0.9383;
+    const double Me = 0.00051;
+    
     
     int Nsim;
     double Eb;
@@ -59,6 +66,20 @@ int main(int argc, char** argv) {
     double Eg_max;
     bool isLund;
     double q2_cut;
+
+    // ================== Limits defined by User ==========
+    double t_limUser;
+    double Eg_minUser;
+    double Eg_maxUser;
+    double q2_cutUser;
+
+    // ================== Limits constrained by kimenatics ==========
+    // ================== If User limits are out of the kinematic range, then kinematic limits will be used instead
+    double t_limKine;
+    double Eg_minKine;
+    double Eg_maxKine;
+    double q2_cutKine;
+    
     
     for( map<std::string, std::string>::iterator it =  m_Settings.begin(); it!= m_Settings.end(); it++ ){
     
@@ -74,8 +95,8 @@ int main(int argc, char** argv) {
         }else if( key.compare("EgMin") == 0 ){
             Eg_min = atof(val.c_str());
         }else if( key.compare("EgMax") == 0 ){
-            Eg_max = atof(val.c_str());
-        }else if( key.compare("Q2Cut") == 0 ){
+            Eg_maxUser = atof(val.c_str());
+        }else if( key.compare("q2Cut") == 0 ){
             q2_cut = atof(val.c_str());
         }else if( key.compare("LUND") == 0 ){
             isLund = atof(val.c_str());
@@ -91,10 +112,18 @@ int main(int argc, char** argv) {
     cout<<"q2_cut = "<<q2_cut<<endl;
     cout<<"IsLund = "<<isLund<<endl;
     
-    const double PI = 3.14159265358979312;
-    const double radian = 57.2957795130823229;
-    const double Mp = 0.9383;
-    const double Me = 0.00051;
+    
+    // =====================================================================
+    // ==== We know the beam energy, so Eg_maxKine is Eb
+    // =====================================================================
+    
+    Eg_maxKine = Eb;
+    Eg_max = TMath::Min(Eg_maxUser, Eg_maxKine);
+    
+    // ======= With a given Eg_minUser, Q2
+    double Q2MinKine = TMath::Power(sqrt(Mp*Mp + 2*Mp*Eg_minUser) - Mp , 2);
+    
+    
     //const double Eb = 11.;
     //const double t_lim = -1.2; // limit of t distribution Max(|t|)
 
