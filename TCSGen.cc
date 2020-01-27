@@ -61,14 +61,16 @@ int main(int argc, char** argv) {
 
     int Nsim;
     double Eb;
-    double t_lim;
+    double t_min;
+    double t_max;
     double Eg_min;
     double Eg_max;
     bool isLund;
     double q2_cut;
 
     // ================== Limits defined by User ==========
-    double t_limUser;
+    double t_minUser;
+    double t_maxUser;
     double Eg_minUser;
     double Eg_maxUser;
     double q2_cutUser;
@@ -94,8 +96,10 @@ int main(int argc, char** argv) {
             Nsim = atoi(val.c_str());
         } else if (key.compare("Eb") == 0) {
             Eb = atof(val.c_str());
-        } else if (key.compare("tLim") == 0) {
-            t_lim = atof(val.c_str());
+        } else if (key.compare("tMin") == 0) {
+            t_min = atof(val.c_str());
+        } else if (key.compare("tMax") == 0) {
+            t_max = atof(val.c_str());
         } else if (key.compare("EgMin") == 0) {
             Eg_minUser = atof(val.c_str());
         } else if (key.compare("EgMax") == 0) {
@@ -191,8 +195,8 @@ int main(int argc, char** argv) {
 
         if (t_min > t_lim) {
             t = rand.Uniform(t_min - psf_t, t_min);
-            double Q2max = 2 * Mp * Eg + t - (Eg / Mp)*(2 * Mp * Mp - t - sqrt(t * t - 4 * Mp * Mp * t)); // Page 182 of my notebook. Derived using "Q2max = s + t - 2Mp**2 + u_max" relation
-
+            //double Q2max = 2 * Mp * Eg + t - (Eg / Mp)*(2 * Mp * Mp - t - sqrt(t * t - 4 * Mp * Mp * t)); // Page 182 of my notebook. Derived using "Q2max = s + t - 2Mp**2 + u_max" relation
+            double Q2max = s+Mp*Mp-(1/(2*Mp*Mp))*((s+Mp*Mp)*(2*Mp*Mp-t)-sqrt(Lambda(s,Mp*Mp,0.0)*Lambda(t,Mp*Mp,Mp*Mp)));//equation for s2 p121(5/5.11) in Byckling
             double psf_Q2 = Q2max - Q2MinUser;
 
             Q2 = rand.Uniform(Q2MinUser, Q2MinUser + psf_Q2);
