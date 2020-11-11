@@ -20,6 +20,7 @@
 
 #include <cstdlib>
 #include <iostream>
+#include <random>
 
 using namespace std;
 using namespace KinFuncs;
@@ -190,7 +191,7 @@ int main(int argc, char** argv) {
 	// ======= to be the threshold for Minv production.
 
 
-	//Eg_min = TMath::Max(Eg_minKine, Eg_minUser);
+	Eg_min =  Eg_minUser;
 
 
 	TRandom2 rand;
@@ -247,7 +248,7 @@ int main(int argc, char** argv) {
                     previousEvent=false;
                 }
 
-
+//cout<<Eg_min<<" "<<Eg_max<<endl;
 		double psf_Eg = Eg_max - Eg_min;
 		Eg = rand.Uniform(Eg_min, Eg_min + psf_Eg);
 		flux_factor = N_EPA(Eb, Eg, q2_cut);
@@ -265,10 +266,10 @@ int main(int argc, char** argv) {
 		//cout<<"t_max = "<<T_min(0., Mp*Mp, Q2MinUser, Mp*Mp, s)<<"      t_maxUser = "<<t_maxUser<<endl;
 		// cout<<"t_min = "<<t_min<<"      t_max = "<<t_max<<"    Eg = "<<Eg<<" psft "<<psf_t<<endl;
 
-		if (t_min < t_max && Eg > (Q2MinUser + 2*sqrt(Q2MinUser)*Mp)/2*Mp) {
+		if (t_min <= t_max && Eg > (Q2MinUser + 2*sqrt(Q2MinUser)*Mp)/2*Mp) {
 			t = rand.Uniform(t_min, t_min+psf_t);
 
-			//cout<<t<<endl;
+			
 			//double Q2max = 2 * Mp * Eg + t - (Eg / Mp)*(2 * Mp * Mp - t - sqrt(t * t - 4 * Mp * Mp * t)); // Page 182 of my notebook. Derived using "Q2max = s + t - 2Mp**2 + u_max" relation
 			double Q2maxKine = s+Mp*Mp-(1/(2*Mp*Mp))*((s+Mp*Mp)*(2*Mp*Mp-t)-sqrt(Lambda(s,Mp*Mp,0.0)*Lambda(t,Mp*Mp,Mp*Mp)));//equation for s2 p121(5/5.11) in Byckling
 
@@ -292,9 +293,31 @@ int main(int argc, char** argv) {
 			double psf_cos_th = 2.; // cos(th):(-1 : 1)
 			double psf_phi_cm = 2 * PI;
 
+			std::random_device rd;     // only used once to initialise (seed) engine
+			std::mt19937 rng(rd());    // random-number engine used (Mersenne-Twister in this case)
+			std::uniform_int_distribution<int> uni(0,1); // guaranteed unbiased
+			int th= uni(rng); //get 0 or 1
+			
+			
+			
+			/*double cos_th;
+			if(th)cos_th=rand.Uniform(cos((PI/180.)*50.), cos((PI/180.)*70.));//cos((PI/180.)*60.);
+			else cos_th=rand.Uniform(cos((PI/180.)*110.), cos((PI/180.)*130.));*/
 			double cos_th = rand.Uniform(-1., -1 + psf_cos_th);
 			double sin_th = sqrt(1 - cos_th * cos_th);
+			
+			/*double phi_cm;
+			if(th)phi_cm=rand.Uniform(-50.*(PI/180.), 50.*(PI/180.));
+			else {
+			phi_cm=rand.Uniform(-50.*(PI/180.), 50.*(PI/180.));
+			if(phi_cm<0.)phi_cm=phi_cm+PI;
+			else phi_cm=phi_cm-PI;
+			}*/
+			
 			double phi_cm = rand.Uniform(0., 0. + psf_phi_cm);
+			//double phi_cm = rand.Uniform(-(1./2.) *PI, PI*(-1./4.));
+
+			//if(!th)cout<<"Phi cm   "<<phi_cm<<endl;
 
 			double El = sqrt(Q2) / 2.; // Energy of lepton in the rest frame of qprime
 			double Pl = sqrt(El * El - Me * Me);
@@ -397,4 +420,3 @@ int main(int argc, char** argv) {
 
 	return 0;
 }
-
